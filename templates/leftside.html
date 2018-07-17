@@ -1,0 +1,35 @@
+<div class="col-md-2">
+    <div class="panel panel-default">
+        <div class="panel-heading">随笔分类</div>
+        <ul class="list-group">
+            {% for category, num_articles in categories %}
+                <li class="list-group-item">
+                    <a href="{% url 'homesite' username 'category' category %}">{{ category }}({{ num_articles }})</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="panel panel-danger">
+        <div class="panel-heading">
+            <h3 class="panel-title">我的标签</h3>
+        </div>
+        <ul class="list-group">
+            {% for tag, num_articles in tags %}
+                <li class="list-group-item">
+                    <a href="{% url 'homesite' username 'tag' tag %}">{{ tag }}({{ num_articles }})</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">日期归档</h3>
+        </div>
+        <ul class="list-group">
+            {% for year_month, num in archive %}
+                <li class="list-group-item">
+                    <a href="{% url 'homesite' username 'archive' year_month %}">{{ year_month|slice:'4' }}年{{ year_month|slice:'5:' }}月({{ num }})</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>

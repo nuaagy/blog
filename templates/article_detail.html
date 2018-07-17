@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h3 class="text-center"><a href="">{{ detail_article.title }}</a></h3>
+    <div class="text-justify">{{ detail_article.content|safe }}</div>
+    <div id="div_digg">
+        <div class="diggit">
+            <span class="diggnum" id="digg_count">{{ detail_article.up_count }}</span>
+        </div>
+        <div class="buryit">
+            <span class="burynum" id="bury_count">{{ detail_article.down_count }}</span>
+        </div>
+        <div class="diggword" id="digg_tips" style="color: red;"></div>
+        <a href="#tbCommentBody" id="quickReply">快速评论</a>
+    </div>
+    <hr>
+    <h4>评论列表</h4>
+    <ul class="list-group comment_list">
+        {% for comment in comments %}
+            <li class="list-group-item">
+                <div>
+                    <a href="#{{ comment.pk }}">#{{ forloop.counter }}楼</a>&nbsp;
+                    <a name="{{ comment.pk }}"></a>
+                    <span class="small">{{ comment.create_time|date:'Y-m-d H:i:s' }}</span>&nbsp;
+                    <a href="/{{ comment.user }}/">{{ comment.user }}</a>
+                    <a href="javascript:void(0);"
+                       class="pull-right reply" username="{{ comment.user }}"
+                       comment_id="{{ comment.pk }}">回复</a>
+                    {#                    <a href="#tbCommentBody" class="pull-right reply">回复</a>#}
+                </div>
+                {% if comment.parent_comment %}
+                    <p class="well">
+                        {{ comment.parent_comment.user }}: {{ comment.parent_comment.content }}
+                    </p>
+                    {% comment %}
+                        {{ comment.parent_comment.user.username }}  why not? 源码 __str__ __repr__
+                    {% endcomment %}
+                {% endif %}
+                <div>
+                    <p>{{ comment.content }}</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div id="comment_form_container">
+        {% if request.user.pk %}
+            <p class="comment_form_title">发表评论</p>
+            <p>
+                <label for="tbCommentAuthor">昵称：</label>
+                <input type="text" id="tbCommentAuthor" class="author" disabled="disabled" size="50"
+                       value="{{ request.user.username }}">
+            </p>
+
+            <h5>评论内容：</h5>
+            <label for="tbCommentBody"></label>
+            <textarea id="tbCommentBody" name='comment' cols="60" rows="10"></textarea>
+
+            <p>
+                <input id="btn_comment_submit" type="button" class="comment_btn" value="提交评论">
+                <a href="{% url 'logout' %}">退出</a>
+            </p>
+        {% else %}
+            <div class="login_tips">注册用户登录后才能发表评论，请<a href="{% url 'login' %}">登录</a>或<a href="">注册</a>，<a
+                    href="/">访问</a>网站首页。
+            </div>
+        {% endif %}
+    </div>
+
+    {% csrf_token %}
+
+
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="/static/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript">
+        // 赞灭
+        $('.diggit, .buryit').click(function () {
+            let _this = $(this);
+
+            let is_up = _this.hasClass('diggit');
+            let digg_tips = $('#digg_tips');
+
+            {% if request.user.is_authenticated %}
+                {% if detail_article.user == request.user %}
+                    let val = is_up ? "不能推荐自己的内容" : "不能反对自己的内容";
+                    digg_tips.html(val);
+                {% else %}
+                    $.ajax({
+                        url: '/digg/',
+                        type: 'post',
+                        data: {
+                            is_up: is_up,  // request.user全局变量 user_id 省略
+                            article_id: '{{ detail_article.pk }}',
+                            csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val()
+                        },
+                        success: function (data) {
+                            if (!data.status) {
+                                // 三元运算符
+                                let prompt = data.is_up ? '您已经推荐过' : '您已经反对过';
+                                $('#digg_tips').text(prompt);
+                                {% comment %}   setTimeout(function () {
+                                       digg_tips.text("")
+                                   }, 1000){% endcomment %}
+                            } else {
+                                // 推荐或反对成功
+
+                                let val = _this.text();
+                                _this.children('span').text(parseInt(val) + 1);
+                                // 弱类型字符串拼接，隐式转换，强制转换number
+                            }
+                        }
+                    });
+                {% endif %}
+            {% else %}
+                {#window.location.href = '/login/';#}
+                digg_tips.html("请先<a href='/login/' class='bg-danger'>登录</a>");
+            {% endif %}
+        });
+
+        pid = null;// 全局变量 默认根评论
+        $('#btn_comment_submit').click(function () {
+
+            let val = $('#tbCommentBody').val();
+            var comment_content = pid?val.slice(val.indexOf('\n')+1):val;
+
+            {#let comment_content = $('#tbCommentBody').val();#}
+
+            if (comment_content) {
+                $.ajax({
+                    url: '/comment/',
+                    type: 'post',
+                    data: {
+                        parent_comment_id: pid,
+                        article_id: '{{ detail_article.pk }}',
+                        content: comment_content,
+                        csrfmiddlewaretoken: $('[name="csrfmiddlewaretoken"]').val(),
+                    },
+                    success: function (data) {
+                        let time = data.time;
+                        {#模板变量request.user#}
+                        let username = '{{ request.user }}';
+                        let content = data.content;
+                        let comment_item = `
+                            <li class="list-group-item">
+                                <div>
+                                    <span class="small">${time}</span>&nbsp;
+                                    <a href="/${username}/">${username}</a>
+                                </div>
+                                <div><p>${content}</p></div>
+                            </li>`;
+                        $('.comment_list').append(comment_item);
+                        // 清空
+                        $('#tbCommentBody').val("")
+                    }
+                })
+            }
+        });
+
+        $('.reply').click(function () {
+            {#注意：阻止a标签默认事件#}
+            let tbCommentBody = $('#tbCommentBody');
+            {#获取焦点#}
+            tbCommentBody.focus();
+
+            let text = '@' + $(this).attr('username') + '\n';// 回blog_comment复按钮 name=''
+            tbCommentBody.val(text);
+            pid = $(this).attr('comment_id');  // 子评论，父评论id赋值
+        })
+    </script>
+{% endblock %}

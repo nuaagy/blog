@@ -1,0 +1,70 @@
+{% extends 'backend/base.html' %}
+
+{% block content %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="inputTitle">标题</label>
+            <input type="text" class="form-control" id="inputTitle" name="title">
+        </div>
+        <div class="form-group">
+            <label for="inputContent">内容(Kindeditor编辑器，不支持拖放/粘贴上传图片)</label>
+            <textarea id="inputContent" name="content" class="form-control" rows="20" cols="10">
+            </textarea>
+        </div>
+
+
+        {% for category in categories %}
+            <div class="radio">
+                <label>
+                    <input type="radio" name="category" value="{{ category.pk }}" checked>{{ category.title }}
+                </label>
+            </div>
+        {% endfor %}
+
+
+        {% for tag in tags %}
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" value="{{ tag.pk }}" name="tag">
+                    {{ tag.title }}
+                </label>
+            </div>
+        {% endfor %}
+
+
+
+
+        <button type="submit" class="btn btn-info">提交</button>
+    </form>
+    <script charset="utf-8" src="/static/kindeditor/kindeditor-all.js"></script>
+    <script>
+            KindEditor.ready(function(K) {
+                    window.editor = K.create('#inputContent', {
+                        width: '700px',
+                        height: '300px',
+                        resizeType: 0,
+                        items: [
+                            'source', '|', 'undo', 'redo', '|', 'preview', 'print', 'template', 'code', 'cut', 'copy', 'paste',
+                            'plainpaste', 'wordpaste', '|', 'justifyleft', 'justifycenter', 'justifyright',
+                            'justifyfull', 'insertorderedlist', 'insertunorderedlist', 'indent', 'outdent', 'subscript',
+                            'superscript', 'clearhtml', 'quickformat', 'selectall', '|', 'fullscreen', '/',
+                            'formatblock', 'fontname', 'fontsize', '|', 'forecolor', 'hilitecolor', 'bold',
+                            'italic', 'underline', 'strikethrough', 'lineheight', 'removeformat', '|', 'image', 'multiimage',
+                            'flash', 'media', 'insertfile', 'table', 'hr', 'emoticons', 'baidumap', 'pagebreak',
+                            'anchor', 'link', 'unlink', '|', 'about'
+                        ],
+                        uploadJson: '/upload/',
+                        {# url #}
+                        filePostName: 'img',
+                        {# request.FILES.get('img') #}
+                        extraFileUploadParams: {
+                            csrfmiddlewaretoken: $('[name="csrfmiddlewaretoken"]').val()
+                        }
+
+                    });
+            });
+    </script>
+
+{% endblock %}

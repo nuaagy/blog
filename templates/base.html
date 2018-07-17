@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ blog.site_name }}</title>
+    <link rel="icon" href="/static/images/icon.png">
+    <link rel="stylesheet" href="/static/bootstrap-3.3.7/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/theme/{{ blog.theme }}">
+    <link rel="stylesheet" href="/static/css/article_digg_bury.css">
+    <script type="text/javascript" src="/static/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.js"></script>
+    {% block css %}
+
+    {% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/{{ username }}/">{{ blog.title }}</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    {% load blog_extras %}
+
+    {% get_query_data username %}
+    <div class="col-md-8" style="overflow: hidden">
+        {% block content %}
+
+        {% endblock %}
+    </div>
+
+    {% block js %}
+
+    {% endblock %}
+</div>
+</body>
+</html>
